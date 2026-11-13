@@ -223,13 +223,13 @@ const exteriors = buildExteriors({ M, registerGlow });
 const exteriorRoot = new THREE.Group();
 for (const e of exteriors) exteriorRoot.add(e.group);
 mansionGroup.add(exteriorRoot);
-let exteriorId = 'A';
+let exteriorId = 'AB';
 function setExterior(id) {
   if (!exteriors.some((e) => e.id === id)) return;
   exteriorId = id;
   for (const e of exteriors) e.group.visible = e.id === id;
   document.querySelectorAll('[data-ext]').forEach((b) => b.classList.toggle('on', b.dataset.ext === id));
-  try { localStorage.setItem('dream-estate-exterior', id); } catch (err) { /* storage is optional */ }
+  try { localStorage.setItem('dream-estate-exterior-v2', id); } catch (err) { /* storage is optional */ }
 }
 
 // ---------- arrival: gate, driveway, forecourt, garage ----------
@@ -772,7 +772,7 @@ for (const v of plan.viewpoints) {
 const extBar = document.getElementById('exteriors');
 for (const e of exteriors) {
   const b = document.createElement('button');
-  b.textContent = `${e.id} · ${e.name}`; b.dataset.ext = e.id;
+  b.textContent = e.id === 'AB' ? 'A + B blend' : `${e.id} · ${e.name}`; b.dataset.ext = e.id;
   b.addEventListener('click', () => { if (explodeTarget) setExplode(false); setExterior(e.id); });
   extBar.appendChild(b);
 }
@@ -862,9 +862,9 @@ function frame() {
 }
 
 setTime('sunset');
-let savedExterior = 'A';
-try { savedExterior = localStorage.getItem('dream-estate-exterior') || 'A'; } catch (err) { /* storage is optional */ }
-setExterior(exteriors.some((e) => e.id === savedExterior) ? savedExterior : 'A');
+let savedExterior = 'AB';
+try { savedExterior = localStorage.getItem('dream-estate-exterior-v2') || 'AB'; } catch (err) { /* storage is optional */ }
+setExterior(exteriors.some((e) => e.id === savedExterior) ? savedExterior : 'AB');
 go('mansion', true);
 window.__estate = { go, setTime, setExplode, setExterior, flyTo, camera, controls, flatMask };
 frame();

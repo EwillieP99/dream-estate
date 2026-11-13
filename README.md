@@ -10,7 +10,7 @@ Phase 1 (grey-box layout, drone view, day/sunset/night lighting) and phase 2 (th
 
 - `src/sitePlan.js` is the site plan: zones, levels, rooms, paths and viewpoints, in meters. Change the plan and the world changes.
 - `src/terrain.js` shapes the ground and drapes paths over it.
-- `src/exteriors.js` builds the three exterior designs: A glass and mosaic, B wave house, C Spanish courtyard.
+- `src/exteriors.js` builds the exterior designs: A glass and mosaic, B wave house, and the A + B blend (C, Spanish courtyard, is kept in the code but not offered).
 - `src/main.js` builds the scene, lighting, camera and controls.
 - `src/template.html` is the page shell and interface.
 

@@ -290,38 +290,46 @@ export function buildExteriors({ M, registerGlow }) {
     g.add(lathe([[0.62, 0], [0.7, 0.2], [0.45, 0.6], [0.12, 1.0], [0, 1.05]], M.stucco, 16).translateX(x).translateY(y + h).translateZ(z));
   }
 
+  // Shared between designs: wave-roof height, bone-like column profile, and studio glass that meets the wave roof.
+  const roofY = (x, z) => 18.15 + 0.8 * Math.sin(x * 0.42 + 0.6) * (0.6 + 0.4 * Math.cos(z * 0.35)) + 0.35 * Math.cos(z * 0.5);
+  const bone = (h) => { const pr = []; for (let i = 0; i <= 18; i++) { const u = i / 18; pr.push([0.26 + 0.42 * Math.abs(2 * u - 1) ** 2.4, u * h]); } return pr; };
+  function studioGlass(g, mull) {
+    const L = LV[3], w = L.w + 0.3, d = L.d + 0.3, y0 = L.y + 0.3, pos = [], idx = [], ring = [];
+    for (let x = -w / 2; x < w / 2 - 1e-6; x += w / 40) ring.push([x, d / 2]);
+    for (let z = d / 2; z > -d / 2 + 1e-6; z -= d / 24) ring.push([w / 2, z]);
+    for (let x = w / 2; x > -w / 2 + 1e-6; x -= w / 40) ring.push([x, -d / 2]);
+    for (let z = -d / 2; z < d / 2 - 1e-6; z += d / 24) ring.push([-w / 2, z]);
+    ring.forEach(([x, z], k) => {
+      pos.push(x, y0, z, x, roofY(x, z) - 0.12, z);
+      const a = k * 2, b = ((k + 1) % ring.length) * 2;
+      idx.push(a, b, a + 1, b, b + 1, a + 1);
+      if (k % 4 === 0) mull.add(x, y0, z, 0.1, roofY(x, z) - 0.12 - y0, 0.1);
+    });
+    const wg = new THREE.BufferGeometry();
+    wg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); wg.setIndex(idx); wg.computeVertexNormals();
+    const gm = glass.clone(); gm.side = THREE.DoubleSide; registerGlow(gm, 0.9);
+    const wm = mesh(wg, gm, 0, 0, 0, false); wm.renderOrder = 2; g.add(wm);
+  }
+  function waveRoof(g, mat) {
+    const rg = new THREE.BoxGeometry(24, 0.35, 16, 56, 1, 36);
+    const p = rg.attributes.position;
+    for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) + roofY(p.getX(i), p.getZ(i)));
+    rg.computeVertexNormals();
+    g.add(mesh(rg, mat, 0, 0, 0));
+  }
+
   // ================= A: Glass & mosaic =================
   function designA() {
     const g = new THREE.Group();
     const mull = new Inst(unitBox, M.trim), fins = new Inst(unitBox, M.timber);
     g.add(mesh(new RoundedBoxGeometry(27, 0.5, 19, 3, 0.2), marble, 0, 0.06, 0));
-    const roofY = (x, z) => 18.15 + 0.8 * Math.sin(x * 0.42 + 0.6) * (0.6 + 0.4 * Math.cos(z * 0.35)) + 0.35 * Math.cos(z * 0.5);
     LV.forEach((L, i) => {
-      if (i < 3) {
-        const gh = L.h - 0.45;
-        const gl = bx(L.w + 0.3, gh, L.d + 0.3, glass, 0, L.y + 0.3, 0, false); gl.renderOrder = 2;
-        g.add(gl);
-        g.add(mesh(new RoundedBoxGeometry(L.w + 1.5, 0.5, L.d + 1.5, 3, 0.22), M.stucco, 0, L.y + L.h + 0.02, 0));
-        for (const [x, z, side] of perimeter(L.w + 0.34, L.d + 0.34, 2)) mull.add(x, L.y + 0.3, z, side ? 0.16 : 0.08, gh, side ? 0.08 : 0.16);
-      } else {
-        // Studio glass rises to meet the underside of the wave roof.
-        const w = L.w + 0.3, d = L.d + 0.3, y0 = L.y + 0.3, pos = [], idx = [];
-        const ring = [];
-        for (let x = -w / 2; x < w / 2 - 1e-6; x += w / 40) ring.push([x, d / 2]);
-        for (let z = d / 2; z > -d / 2 + 1e-6; z -= d / 24) ring.push([w / 2, z]);
-        for (let x = w / 2; x > -w / 2 + 1e-6; x -= w / 40) ring.push([x, -d / 2]);
-        for (let z = -d / 2; z < d / 2 - 1e-6; z += d / 24) ring.push([-w / 2, z]);
-        ring.forEach(([x, z], k) => {
-          pos.push(x, y0, z, x, roofY(x, z) - 0.12, z);
-          const a = k * 2, b = ((k + 1) % ring.length) * 2;
-          idx.push(a, b, a + 1, b, b + 1, a + 1);
-          if (k % 4 === 0) mull.add(x, y0, z, 0.1, roofY(x, z) - 0.12 - y0, 0.1);
-        });
-        const wg = new THREE.BufferGeometry();
-        wg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); wg.setIndex(idx); wg.computeVertexNormals();
-        const gm = glass.clone(); gm.side = THREE.DoubleSide; registerGlow(gm, 0.9);
-        const wm = mesh(wg, gm, 0, 0, 0, false); wm.renderOrder = 2; g.add(wm);
-      }
+      if (i === 3) return studioGlass(g, mull);
+      const gh = L.h - 0.45;
+      const gl = bx(L.w + 0.3, gh, L.d + 0.3, glass, 0, L.y + 0.3, 0, false); gl.renderOrder = 2;
+      g.add(gl);
+      g.add(mesh(new RoundedBoxGeometry(L.w + 1.5, 0.5, L.d + 1.5, 3, 0.22), M.stucco, 0, L.y + L.h + 0.02, 0));
+      for (const [x, z, side] of perimeter(L.w + 0.34, L.d + 0.34, 2)) mull.add(x, L.y + 0.3, z, side ? 0.16 : 0.08, gh, side ? 0.08 : 0.16);
     });
     // Marble fin wall on the east side and a marble panel with a rose window over the entry.
     g.add(bx(0.55, 12.5, 5, marble, 12.45, 0.25, 1.2));
@@ -334,14 +342,7 @@ export function buildExteriors({ M, registerGlow }) {
     // Mosaic stair tower at the north-west corner.
     tower(g, -11.7, -7.7, 2.6, 20, mosaic(COOL, [5, 7]), (rt) => [[rt, 0], [rt + 0.7, 0.35], [rt + 0.85, 0.9], [rt + 0.3, 1.7], [1.3, 2.9], [0.4, 3.8], [0, 4.1]], mosaic(WARM, [5, 2], 12));
     // Wave roof over the studio.
-    const rg = new THREE.BoxGeometry(24, 0.35, 16, 56, 1, 36);
-    const p = rg.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), z = p.getZ(i);
-      p.setY(i, p.getY(i) + roofY(x, z));
-    }
-    rg.computeVertexNormals();
-    g.add(mesh(rg, M.stucco, 0, 0, 0));
+    waveRoof(g, M.stucco);
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
       const ch = roofY(sx * 11.3, sz * 7.3) - 12.78;
       g.add(mesh(new THREE.CylinderGeometry(0.11, 0.11, ch, 10), M.trim, sx * 11.3, 12.78 + ch / 2, sz * 7.3));
@@ -365,7 +366,6 @@ export function buildExteriors({ M, registerGlow }) {
   function designB() {
     const g = new THREE.Group();
     const mull = new Inst(unitBox, M.trim), bal = new Inst(unitCyl, gold);
-    const bone = (h) => { const pr = []; for (let i = 0; i <= 18; i++) { const u = i / 18; pr.push([0.26 + 0.42 * Math.abs(2 * u - 1) ** 2.4, u * h]); } return pr; };
     g.add(outlineSlab(squircle(15.4, 10.6, 5, 0.45, 7, 1), 0.5, marble, 0.32));
     // Glass skin.
     g.add(outlineWall(squircle(13.9, 9.3, 6), 12.2, glass, 0.3));
@@ -507,9 +507,69 @@ export function buildExteriors({ M, registerGlow }) {
     return g;
   }
 
+  // ================= A + B: the glass house wrapped in waves =================
+  function designAB() {
+    const g = new THREE.Group();
+    const mull = new Inst(unitBox, M.trim), bal = new Inst(unitCyl, gold);
+    g.add(outlineSlab(squircle(14.6, 10.5, 8, 0.4, 7, 1), 0.5, marble, 0.32));
+    // A's crisp glass body.
+    LV.forEach((L, i) => {
+      if (i === 3) return studioGlass(g, mull);
+      const gh = L.h - 0.45;
+      const gl = bx(L.w + 0.3, gh, L.d + 0.3, glass, 0, L.y + 0.3, 0, false); gl.renderOrder = 2;
+      g.add(gl);
+      for (const [x, z, side] of perimeter(L.w + 0.34, L.d + 0.34, 2)) mull.add(x, L.y + 0.3, z, side ? 0.16 : 0.08, gh, side ? 0.08 : 0.16);
+    });
+    // B's undulating balconies and bronze rails on every floor.
+    [[4.5, 0], [8.5, 2.1], [12.5, 4.2]].forEach(([y, phase], i) => {
+      const a = 14.3 - i * 0.15, b = 10.2 - i * 0.12;
+      g.add(outlineSlab(squircle(a, b, 8, 0.7, 7, phase), 0.5, M.stucco, y + 0.3));
+      const rp = squircle(a - 0.3, b - 0.3, 8, 0.7, 7, phase);
+      const curve = (lift) => new THREE.CatmullRomCurve3(rp.map(([x, z]) => new THREE.Vector3(x, y + 0.3 + lift, z)), true);
+      g.add(mesh(new THREE.TubeGeometry(curve(1.05), 480, 0.05, 6, true), gold), mesh(new THREE.TubeGeometry(curve(0.2), 480, 0.03, 6, true), gold));
+      for (const q of curve(0).getSpacedPoints(170)) bal.add(q.x, y + 0.3, q.z, 0.022, 1.05, 0.022);
+    });
+    // Bone-like columns at the ground floor and holding up the roof.
+    squircle(13.5, 9.5, 8, 0, 0, 0, 18).forEach(([x, z]) => { if (z > 8 && Math.abs(x) < 5) return; const c = lathe(bone(4.3), marble, 16); c.position.set(x, 0.3, z); g.add(c); });
+    squircle(11.5, 7.5, 8, 0, 0, 0, 12).forEach(([x, z]) => {
+      const h = roofY(x, z) - 0.15 - 12.8;
+      const c = lathe(bone(h).map(([r, y]) => [r * 0.6, y]), marble, 14); c.position.set(x, 12.8, z); g.add(c);
+    });
+    // A's wave roof, clad in B's scales, with a golden spine along the ridge.
+    waveRoof(g, scales([14, 9]));
+    for (let i = -8; i <= 8; i++) {
+      const x = i * 1.4;
+      g.add(mesh(new THREE.SphereGeometry(0.44 - Math.abs(i) * 0.02, 14, 10), gold, x, roofY(x, 0) + 0.42, 0));
+    }
+    // A's marble panel and rose window over the entry, with B's bubbles drifting either side.
+    g.add(bx(0.55, 12.5, 5, marble, 12.45, 0.25, 1.2));
+    g.add(bx(7, 8.3, 0.5, marble, 0, 4.45, 8.35));
+    g.add(mesh(new THREE.CircleGeometry(1.7, 48), rose, 0, 10.65, 8.62, false)); // sits between the two upper balconies
+    g.add(mesh(new THREE.TorusGeometry(1.7, 0.12, 12, 64), gold, 0, 10.65, 8.62));
+    portal(g, 8.2, 6.4, 5.5, 4.4, 4.5, 1.9, mosaicWarmM);
+    const rnd = rng(44); const spots = []; let guard = 0;
+    while (spots.length < 14 && guard++ < 500) {
+      const x = (rnd() * 2 - 1) * 11.2, y = 5.6 + rnd() * 6.2, r = 0.4 + rnd() * 0.7;
+      if (Math.abs(x) < 3.8 + r) continue; // keep clear of the marble panel
+      if (Math.abs(y - 8.65) < r + 0.35) continue; // and of the balcony slab
+      if (spots.some((q) => Math.hypot(q[0] - x, q[1] - y) < q[2] + r + 0.25)) continue;
+      spots.push([x, y, r]);
+      g.add(mesh(new THREE.CircleGeometry(r, 32), spots.length % 3 ? stainedUV : rose, x, y, 8.26, false));
+      g.add(mesh(new THREE.TorusGeometry(r, 0.07, 8, 40), gold, x, y, 8.26));
+    }
+    // A's mosaic tower under B's onion cap.
+    tower(g, -11.9, -7.9, 2.6, 20.5, mosaic(COOL, [5, 7]), (rt) => [[rt, 0], [rt + 0.9, 0.7], [rt + 0.95, 1.6], [rt + 0.2, 2.9], [1.0, 4.0], [0.3, 4.9], [0, 5.3]], mosaic(WARM, [6, 3], 12), 0.2);
+    twistedChimney(g, 11.2, 12.78, -7.2, 2.8, mosaicCoolM);
+    twistedChimney(g, 11.3, 12.78, -5.7, 2.1, mosaicWarmM);
+    twistedChimney(g, 9.9, 12.78, -7.3, 2.4, mosaicCoolM);
+    g.add(mull.build(), bal.build());
+    return g;
+  }
+  void designC; // the Spanish courtyard design is kept in the code but no longer offered
+
   return [
+    { id: 'AB', name: 'Blend', group: designAB() },
     { id: 'A', name: 'Glass & mosaic', group: designA() },
     { id: 'B', name: 'Wave house', group: designB() },
-    { id: 'C', name: 'Spanish courtyard', group: designC() },
   ];
 }
