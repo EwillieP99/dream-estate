@@ -134,7 +134,8 @@ export const paths = {
 // Named viewpoints for the drone camera: [camera position], [look-at target].
 export const viewpoints = [
   { id: 'estate', label: 'Whole estate', pos: [-40, 190, 330], target: [70, 0, 10] },
-  { id: 'mansion', label: 'Mansion', pos: [-48, 26, 62], target: [0, 8, 0] },
+  { id: 'mansion', label: 'Mansion front', pos: [-34, 15, 52], target: [0, 9.5, 0] },
+  { id: 'back', label: 'Mansion back', pos: [30, 14, -50], target: [-2, 9.5, 0] },
   { id: 'pool', label: 'Pool', pos: [34, 22, -2], target: [0, 0, -44] },
   { id: 'waterfall', label: 'Waterfall & garden', pos: [58, 16, -18], target: [94, 4, -56] },
   { id: 'gate', label: 'Front gate', pos: [6, 7, 300], target: [0, 4, 240] },

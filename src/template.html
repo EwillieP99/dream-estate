@@ -27,7 +27,9 @@
   #title p { margin: 5px 0 0; font-size: 12px; opacity: 0.78; }
   #title .phase { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; background: var(--accent);
     font-weight: 600; font-size: 11px; opacity: 1; }
-  #tools { top: 16px; right: 16px; padding: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; }
+  #tools { top: 16px; right: 16px; padding: 8px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; max-width: 64vw; }
+  #tools .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  #tools .cap { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; padding-left: 4px; }
   .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   button { font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 0; padding: 7px 12px; cursor: pointer;
     transition: background 0.15s; }
@@ -39,7 +41,7 @@
   #views { bottom: 18px; left: 50%; transform: translateX(-50%); padding: 6px; display: flex; gap: 4px; max-width: calc(100vw - 32px); overflow-x: auto; }
   #views button { border-radius: 9px; white-space: nowrap; }
   #help { bottom: 78px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.85; text-shadow: 0 1px 3px rgba(0,0,0,0.6); white-space: nowrap; }
-  @media (max-width: 760px) { #help { display: none; } #tools { max-width: 100vw; left: 16px; top: 92px; justify-content: flex-start; } }
+  @media (max-width: 900px) { #help { display: none; } #tools { max-width: calc(100vw - 32px); left: 16px; right: auto; top: 92px; align-items: flex-start; } #tools .row { justify-content: flex-start; } }
 </style>
 </head>
 <body>
@@ -48,17 +50,23 @@
 
 <div id="title" class="hud panel">
   <h1>Dream Estate</h1>
-  <p><span class="phase">Phase 1</span>Grey-box layout · <span id="stats"></span></p>
+  <p><span class="phase">Phase 2</span>Exterior options · <span id="stats"></span></p>
 </div>
 
 <div id="tools" class="hud panel">
-  <div class="seg" role="group" aria-label="Time of day">
-    <button data-time="day">Day</button>
-    <button data-time="sunset">Sunset</button>
-    <button data-time="night">Night</button>
+  <div class="row">
+    <span class="cap">Exterior</span>
+    <div class="seg" id="exteriors" role="group" aria-label="Exterior design"></div>
   </div>
-  <button id="explode" class="chip" title="Lift the floors apart to see every room, including the basement levels">Open up the floors</button>
-  <button id="toggleLabels" class="chip on">Labels</button>
+  <div class="row">
+    <div class="seg" role="group" aria-label="Time of day">
+      <button data-time="day">Day</button>
+      <button data-time="sunset">Sunset</button>
+      <button data-time="night">Night</button>
+    </div>
+    <button id="explode" class="chip" title="Lift the floors apart to see every room, including the basement levels">Open up the floors</button>
+    <button id="toggleLabels" class="chip on">Labels</button>
+  </div>
 </div>
 
 <div id="help" class="hud">Drag to orbit · Scroll to zoom · Right-drag to pan · Double-click anywhere to fly there</div>
